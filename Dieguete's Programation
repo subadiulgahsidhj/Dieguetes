@@ -1,0 +1,54 @@
+//COPYRIGHT MANUEL
+#include <SoftwareSerial.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_BME280.h>
+#include <SD.h>
+const int RX = 4;
+const int TX = 3;
+unsigned long millisDatos = 0;
+unsigned long millisGPS = 0;
+const long intervaloDatos = 1000;
+const long intervaloGPS = 10;
+#define SEALEVELPRESSURE_HPA (1013.25)
+
+Adafruit_BME280 bme;
+SoftwareSerial gps(RX, TX);
+File datos;
+
+void setup()
+{
+  Serial1.begin(9600);
+  SD.begin(9);
+  gps.begin(9600);
+  if (!bme.begin(0x76)) {
+    Serial.println("Could not find a valid BME280 sensor, check wiring!");
+    while (1);
+  }
+}
+
+void loop()
+{
+  unsigned long millisActual = millis();
+  if (millisActual - millisDatos >= intervaloDatos) {
+      datos = SD.open("datos.txt", FILE_WRITE);
+      datos.print("Temperature = ");
+      datos.print(bme.readTemperature());
+      datos.println("*C");
+      datos.print("Pressure = ");
+      datos.print(bme.readPressure() / 100.0F);
+      datos.println("hPa");
+      datos.print("Approx. Altitude = ");
+      datos.print(bme.readAltitude(SEALEVELPRESSURE_HPA));
+      datos.println("m");
+      datos.print("Humidity = ");
+      datos.print(bme.readHumidity());
+      datos.println("%");
+      datos.close();
+  }
+  if (millisActual - millisGPS >= intervaloGPS) {
+      char data;
+      data = gps.read();
+      Serial1.print(data);
+  }
+}
